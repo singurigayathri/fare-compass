@@ -187,7 +187,8 @@ footer{max-width:980px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
         <div class="f"><label for="to">To</label><input id="to" class="code" value="BLR" maxlength="3" required></div>
         <div class="f"><label for="dep">Depart (optional)</label><input id="dep" type="date"><span class="hint" id="dep-hint">Empty = cheapest day in month</span></div>
         <div class="f" id="month-f"><label for="month">Month</label><select id="month"></select></div>
-        <div class="f" id="ret-f" hidden><label for="nights">Trip length</label><select id="nights"></select></div>
+        <div class="f" id="retd-f" hidden><label for="retd">Return date</label><input id="retd" type="date"><span class="hint" id="retd-hint">Pick a depart date first</span></div>
+        <div class="f" id="ret-f" hidden><label for="nights">Trip length</label><select id="nights"></select><span class="hint">Used when no return date</span></div>
         <div class="f"><label for="stops">Stops</label><select id="stops"><option value="2">1 stop or fewer</option><option value="3">2 stops or fewer</option><option value="0">Any</option><option value="1">Nonstop</option></select></div>
         <div class="f"><label for="adults">Adults</label><select id="adults"></select></div>
         <div class="f"><label for="cabin">Cabin</label><select id="cabin"><option value="1">Economy</option><option value="2">Premium economy</option><option value="3">Business</option><option value="4">First</option></select></div>
@@ -289,10 +290,18 @@ const dec = today.getFullYear()+"-12"; if([...$("month").options].some(o=>o.valu
 for(let i=1;i<=9;i++){ const o=document.createElement("option"); o.value=i; o.textContent=i; $("adults").appendChild(o); }
 $("dep").min = iso(new Date(today.getTime()+86400000));
 
-function setTrip(t){ S.trip=t; $("t-ow").setAttribute("aria-pressed",t==="ow"); $("t-rt").setAttribute("aria-pressed",t==="rt"); $("ret-f").hidden = t!=="rt"; }
+function setTrip(t){ S.trip=t; $("t-ow").setAttribute("aria-pressed",t==="ow"); $("t-rt").setAttribute("aria-pressed",t==="rt"); $("ret-f").hidden = t!=="rt"; $("retd-f").hidden = t!=="rt"; syncRet(); }
+function syncRet(){
+  const dep=$("dep").value, rd=$("retd");
+  rd.disabled = !dep; rd.min = dep ? addDays(dep,1) : "";
+  if(rd.value && dep && rd.value<=dep) rd.value="";
+  $("retd-hint").textContent = !dep ? "Pick a depart date first" : rd.value ? Math.round((parse(rd.value)-parse(dep))/86400000)+" days trip" : "Empty = use trip length";
+  $("ret-f").hidden = S.trip!=="rt" || !!(dep && rd.value);
+}
+$("retd").addEventListener("input",syncRet);
 $("t-ow").onclick=()=>{ setTrip("ow"); run(); };
 $("t-rt").onclick=()=>{ setTrip("rt"); run(); };
-$("dep").addEventListener("input",()=>{ $("month-f").hidden = !!$("dep").value; $("dep-hint").textContent = $("dep").value ? "We also show ±7 days around it" : "Empty = cheapest day in month"; });
+$("dep").addEventListener("input",()=>{ syncRet(); $("month-f").hidden = !!$("dep").value; $("dep-hint").textContent = $("dep").value ? "We also show ±7 days around it" : "Empty = cheapest day in month"; });
 $("swap").onclick=()=>{ const a=$("from").value; $("from").value=$("to").value; $("to").value=a; };
 $("form").addEventListener("submit",e=>{ e.preventDefault(); run(); });
 $("market").addEventListener("change",()=>{ S.mk=$("market").value; run(); });
@@ -362,7 +371,9 @@ function sample(p){
 /* ---------- main flow ---------- */
 function readForm(){
   const from=$("from").value.trim().toUpperCase(), to=$("to").value.trim().toUpperCase();
-  const dep=$("dep").value, nights=+$("nights").value;
+  const dep=$("dep").value, rd=$("retd").value;
+  let nights=+$("nights").value;
+  if(S.trip==="rt" && dep && rd && rd>dep){ nights=Math.round((parse(rd)-parse(dep))/86400000); }
   let start,end;
   if(dep){ start=addDays(dep,-7); end=addDays(dep,7); }
   else { const [y,m]=$("month").value.split("-").map(Number); start=iso(new Date(y,m-1,1)); end=iso(new Date(y,m,0)); }
@@ -500,7 +511,7 @@ function renderMk(){
 }
 function renderVs(){
   const f=S.params, el=$("vs"); if(!f) return;
-  if(!S.vs){ el.innerHTML=`<p class="sub" style="margin:0">Check whether two one-way tickets beat a return ticket for ${esc(fmtD(S.sel))}, coming back after ${f.nights} days.</p><div class="row"><button type="button" class="ghost" id="vs-btn">Compare prices</button><label class="sub" for="nights2" style="display:flex;gap:6px;align-items:center">Back after<select id="nights2" class="ghost" style="padding:6px 8px">${[7,10,14,21,28].map(n=>`<option ${n===f.nights?"selected":""}>${n}</option>`).join("")}</select>days</label></div>`;
+  if(!S.vs){ el.innerHTML=`<p class="sub" style="margin:0">Check whether two one-way tickets beat a return ticket for ${esc(fmtD(S.sel))}, coming back after ${f.nights} days.</p><div class="row"><button type="button" class="ghost" id="vs-btn">Compare prices</button><label class="sub" for="nights2" style="display:flex;gap:6px;align-items:center">Back after<select id="nights2" class="ghost" style="padding:6px 8px">${[...new Set([7,10,14,21,28,f.nights])].sort((x,y)=>x-y).map(n=>`<option ${n===f.nights?"selected":""}>${n}</option>`).join("")}</select>days</label></div>`;
     $("vs-btn").onclick=compareVs; $("nights2").onchange=e=>{ f.nights=+e.target.value; $("nights").value=f.nights; renderVs(); }; return; }
   if(S.vs.err){ el.innerHTML='<p class="err">'+esc(S.vs.err)+'</p>'; return; }
   const two=S.vs.out+S.vs.back, rtWin=S.vs.rt<=two;
