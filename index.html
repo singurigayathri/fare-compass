@@ -118,7 +118,7 @@ main{max-width:980px;margin:0 auto;padding:16px 16px 56px;display:grid;gap:16px}
 .vs .v{font-family:var(--mono);font-weight:700;font-size:20px}
 .mrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:18px;padding:10px 12px}
 .mrow.win{border-color:var(--good);background:var(--good-soft)}
-.mrow .fl-ic{font-size:20px}
+.mrow .fl-ic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-family:var(--display);font-weight:700;font-size:13px}
 .mrow .pr{font-family:var(--mono);font-weight:800;font-size:17px;text-align:right}
 .mrow .pr small{display:block;font-family:var(--body);font-weight:600;font-size:11px;color:var(--muted)}
 .ghost{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:9px 14px;font-weight:600;cursor:pointer}
@@ -180,7 +180,7 @@ footer{max-width:980px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
         <button type="button" id="t-ow" aria-pressed="true">One-way</button>
         <button type="button" id="t-rt" aria-pressed="false">Return</button>
       </div>
-      <div class="f mk"><label for="market">Book from</label><select id="market"><option value="us">🇺🇸 USA · $ USD</option><option value="eu">🇪🇺 Europe · € EUR</option><option value="in">🇮🇳 India · ₹ INR</option></select></div>
+      <div class="f mk"><label for="market">Book from</label><select id="market"><option value="us">USA · $ USD</option><option value="eu">Europe · € EUR</option><option value="in">India · ₹ INR</option></select></div>
       </div>
       <div class="fields">
         <div class="f"><label for="from">From</label><input id="from" class="code" value="ATL" maxlength="3" required></div>
@@ -258,13 +258,13 @@ footer{max-width:980px;margin:0 auto;padding:0 16px 40px;color:var(--muted);font
 "use strict";
 /* ===== SETTING: paste your Cloudflare Worker URL between the quotes (GitHub Pages).
    Leave it empty when hosting on Vercel, which uses the api/ folder. ===== */
-const WORKER_URL = "https://fare-compass.something.workers.dev";
+const WORKER_URL = "https://fare-compass.singurigayathri.workers.dev";
 const API = WORKER_URL || "api/search";
 const $ = id => document.getElementById(id);
 const MARKETS = {
-  us:{gl:"us", cur:"USD", loc:"en-US", flag:"🇺🇸", name:"USA"},
-  eu:{gl:"at", cur:"EUR", loc:"en-IE", flag:"🇪🇺", name:"Europe"},
-  in:{gl:"in", cur:"INR", loc:"en-IN", flag:"🇮🇳", name:"India"}
+  us:{gl:"us", cur:"USD", loc:"en-US", flag:"US", name:"USA"},
+  eu:{gl:"at", cur:"EUR", loc:"en-IE", flag:"EU", name:"Europe"},
+  in:{gl:"in", cur:"INR", loc:"en-IN", flag:"IN", name:"India"}
 };
 const S = { mk:"us", mkc:null, trip:"ow", demo:false, cal:[], sel:null, flights:null, sort:"price", dests:[], vs:null, insight:null, params:null };
 
@@ -476,7 +476,7 @@ function renderTiles(){
     <div class="tile hot"><span class="k">Cheapest day</span><span class="v">${usd(min.price)}</span><span class="d">${fmtD(min.outbound_date)}</span></div>
     <div class="tile"><span class="k">Your pick</span><span class="v">${fl!=null?usd(fl):selP!=null?usd(selP):"—"}</span><span class="d">${fmtD(S.sel)}${selP!=null&&selP>min.price?" · "+usd(selP-min.price)+" above cheapest":""}</span></div>
     <div class="tile"><span class="k">Average in range</span><span class="v">${usd(avg)}</span><span class="d">${S.cal.length} days scanned</span></div>
-    <div class="tile"><span class="k">Route</span><span class="v">${f.from}→${f.to}</span><span class="d">${f.type==="1"?"Return":"One-way"} · ${f.adults} adult${f.adults>1?"s":""} · ${M().flag} ${M().cur}</span></div>`;
+    <div class="tile"><span class="k">Route</span><span class="v">${f.from}→${f.to}</span><span class="d">${f.type==="1"?"Return":"One-way"} · ${f.adults} adult${f.adults>1?"s":""} · ${M().cur}</span></div>`;
 }
 function renderInsight(){
   const i=S.insight; const el=$("insight");
